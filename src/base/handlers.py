@@ -14,34 +14,32 @@ class PageBase(webapp.RequestHandler):
     
     def initialize(self, request, response):
         webapp.RequestHandler.initialize(self, request, response)
-        
+
         self.google_user = users.get_current_user()
-        if not self.google_user:
-            if self.requires_login:
-                self.redirect(users.create_login_url(self.request.uri))
-                return False
-            else:
-                self.template_values['login_url'] = users.create_login_url(self.request.uri)
-        else:
+        if self.google_user:
             self.email = self.google_user.email()
             self.domain = self.google_user.auth_domain
             self.template_values['logout_url'] = users.create_logout_url('/')
             self.template_values['domain'] = self.domain
             self.template_values['email'] = self.email
+        elif self.requires_login:
+            self.redirect(users.create_login_url(self.request.uri))
+            return False
+        else:
+            self.template_values['login_url'] = users.create_login_url(self.request.uri)
         return True
 
     def render(self, path):
         dir_name = os.path.dirname(__file__)
         dir_name = dir_name[:-len('base')]
-        template_path = os.path.join(dir_name, 'templates/%s' % path)
+        template_path = os.path.join(dir_name, f'templates/{path}')
         self.response.out.write(template.render(template_path, self.template_values))
         
     def load_object_from_request(self):
         path = self.request.path
         if path[-1] == '/':
             path = path[:-1]
-        bits = path.split('/')
-        if bits:
+        if bits := path.split('/'):
             try:
                 return db.get(bits[-1])
             except:

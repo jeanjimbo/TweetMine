@@ -27,25 +27,25 @@ class MineTweets(webapp.RequestHandler):
         #url = 'http://search.twitter.com/search.json?q=' + search
         #if last_tweet:
         #    url += '&since_id=' + last_tweet.id
-        
+
         cache = memcache.Client()
-        
+
         url = SEARCH_URL
-        url += mine.url if mine.url else '?q=' + mine.search
+        url += mine.url if mine.url else f'?q={mine.search}'
         url += '&rpp=100'
         r = urlfetch.fetch(url)
         if r.status_code == 200:
             twitter_resp = simplejson.loads(r.content)
-            
+
             if not twitter_resp['results']:
                 self.dump_count(cache, mine)
                 return
 
             mine.url = twitter_resp['refresh_url']
             mine.put()
-            
+
             MineTweets.fire(key=key)
-            
+
             for result in twitter_resp['results']:
                 created = datetime(*rfc822.parsedate(result['created_at'])[:7])
                 models.Tweet(parent=mine,
@@ -57,8 +57,7 @@ class MineTweets(webapp.RequestHandler):
             self.dump_count(cache, mine)
 
     def dump_count(self, cache, mine):
-        count = cache.get(str(mine.key()))
-        if count:
+        if count := cache.get(str(mine.key())):
             mine.count = int(count)
             mine.put()
 

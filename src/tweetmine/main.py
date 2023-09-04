@@ -14,15 +14,14 @@ class AddSearch(PageBase):
     def get(self):
         search = self.request.get('search')
         models.Mine(search=search).put()
-        self.response.out.write('Added ' + search)
+        self.response.out.write(f'Added {search}')
         
 class RemoveSearch(PageBase):
     def get(self):
         search = self.request.get('search')
-        stuff = models.Mine.gql('WHERE search = :1', search).fetch(100)
-        if stuff:
+        if stuff := models.Mine.gql('WHERE search = :1', search).fetch(100):
             db.delete(stuff)
-        self.response.out.write('Deleted ' + search)
+        self.response.out.write(f'Deleted {search}')
 
 
 class TweetsPage(PageBase):
@@ -50,8 +49,7 @@ class Xhr(XhrBase):
         return self.GetMines()
     
     def DeleteMine(self):
-        mine = db.get(self.request.get('key'))
-        if mine:
+        if mine := db.get(self.request.get('key')):
             models.Mine.delete(mine)
         return self.GetMines()
 
@@ -59,7 +57,7 @@ class DeleteTweets(webapp.RequestHandler):
     def get(self):
         tweets = models.Tweet.all(keys_only=True).fetch(1000)
         db.delete(tweets)
-        self.response.out.write('deleted %s' % len(tweets))
+        self.response.out.write(f'deleted {len(tweets)}')
 
 application = webapp.WSGIApplication(
                                      [
